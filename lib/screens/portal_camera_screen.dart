@@ -251,7 +251,6 @@ class _PortalCameraScreenState extends State<PortalCameraScreen> {
 
   Future<void> _uploadModel(String modelUrl) async {
     try {
-      // Assume the model URL is a direct URL to the model file you want to upload.
       final http.Response response = await http.get(Uri.parse(modelUrl));
 
       if (response.statusCode == 200) {
@@ -281,6 +280,10 @@ class _PortalCameraScreenState extends State<PortalCameraScreen> {
         });
 
         print('Model uploaded to Firebase: $downloadUrl');
+        
+        // Make POST request to Flask server to process the model
+        await _processModelOnServer(downloadUrl);
+
       } else {
         print('Failed to download model file: ${response.statusCode}');
         throw Exception('Failed to download model file');
@@ -288,6 +291,30 @@ class _PortalCameraScreenState extends State<PortalCameraScreen> {
     } catch (e) {
       print('Error uploading model to Firebase: $e');
       throw Exception('Error uploading model to Firebase');
+    }
+  }
+
+  Future<void> _processModelOnServer(String modelUrl) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:5001/process_model'), 
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'model_path': modelUrl,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Model processing initiated successfully');
+      } else {
+        print('Failed to initiate model processing: ${response.statusCode}');
+        throw Exception('Failed to initiate model processing');
+      }
+    } catch (e) {
+      print('Error processing model on server: $e');
+      throw Exception('Error processing model on server');
     }
   }
 
