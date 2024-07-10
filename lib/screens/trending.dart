@@ -9,7 +9,7 @@ class Trending extends StatefulWidget {
 }
 
 class _TrendingState extends State<Trending> {
-  List<Map<String, dynamic>> _videos = [];
+  List<Map<String, dynamic>> _items = [];
   bool _loading = true;
 
   @override
@@ -20,24 +20,37 @@ class _TrendingState extends State<Trending> {
 
   Future<void> _initializeFirebase() async {
     await Firebase.initializeApp();
-    _fetchVideos();
+    _fetchItems();
   }
 
-  Future<void> _fetchVideos() async {
+  Future<void> _fetchItems() async {
     try {
-      QuerySnapshot snapshot =
+      // Fetch videos
+      QuerySnapshot videoSnapshot =
           await FirebaseFirestore.instance.collection('videos').get();
-      List<Map<String, dynamic>> videoData = snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
+      List<Map<String, dynamic>> videoData = videoSnapshot.docs
+          .map((doc) => {'type': 'video', ...doc.data() as Map<String, dynamic>})
           .toList();
+
+      // Fetch AR models
+      QuerySnapshot arSnapshot =
+          await FirebaseFirestore.instance.collection('portals').get();
+      List<Map<String, dynamic>> arData = arSnapshot.docs
+          .map((doc) => {'type': 'ar', ...doc.data() as Map<String, dynamic>})
+          .toList();
+
+      // Combine and sort by timestamp or any other criteria
+      List<Map<String, dynamic>> combinedData = [...videoData, ...arData];
+      combinedData.sort((a, b) => b['timestamp'].compareTo(a['timestamp']));
+
       if (mounted) {
         setState(() {
-          _videos = videoData;
+          _items = combinedData;
           _loading = false;
         });
       }
     } catch (e) {
-      print('Error fetching videos: $e');
+      print('Error fetching items: $e');
     }
   }
 
@@ -48,9 +61,9 @@ class _TrendingState extends State<Trending> {
           ? Center(child: CircularProgressIndicator())
           : PageView.builder(
               scrollDirection: Axis.vertical,
-              itemCount: _videos.length,
+              itemCount: _items.length,
               itemBuilder: (context, index) {
-                return TikTokVideo(data: _videos[index]);
+                return TikTokVideo(data: _items[index]);
               },
             ),
     );

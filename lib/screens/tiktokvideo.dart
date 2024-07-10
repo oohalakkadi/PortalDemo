@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widget/videoPlayer.dart';
 import '../widget/leftItems.dart';
 import '../widget/rightItems.dart';
+import '../widget/arScreen.dart';
 
 class TikTokVideo extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -13,13 +14,14 @@ class TikTokVideo extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          TikTokVideoPlayer(url: data['url']),
+          if (data['type'] == 'video')
+            TikTokVideoPlayer(url: data['url'])
+          else
+            ARScreen(modelPath: data['url']),
           title(),
           RightItems(
             comments: data['commentCount'].toString(),
-            // userImg: data['userImg'],
             favorite: data['favorite'],
-            // coverImg: data['coverImg'],
           ),
           LeftItems(
             description: data['description'],
